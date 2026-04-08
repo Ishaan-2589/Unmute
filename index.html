@@ -241,18 +241,24 @@ async function startCamera() {
     }
 
     const constraints = {
-        video: { facingMode: currentFacingMode }
+        video: { 
+            facingMode: currentFacingMode,
+            width: { ideal: 640 },
+            height: { ideal: 480 }
+        }
     };
 
     try {
         stream = await navigator.mediaDevices.getUserMedia(constraints);
         videoElement.srcObject = stream;
         
-        // Mirror check
+        // MIRROR LOGIC:
+        // 'user' = front camera (needs horizontal mirror)
+        // 'environment' = back camera (no mirror)
         if (currentFacingMode === 'user') {
-            canvasElement.style.transform = "scaleX(-1)";
+            canvasElement.style.transform = "scaleX(-1)"; // Flip horizontally
         } else {
-            canvasElement.style.transform = "scaleX(1)";
+            canvasElement.style.transform = "scaleX(1)";  // Normal view
         }
 
         videoElement.onloadedmetadata = () => {
@@ -264,7 +270,6 @@ async function startCamera() {
         alert("Camera access denied or not available");
     }
 }
-
 async function sendToMediaPipe() {
     if (!videoElement.paused && !videoElement.ended) {
         await hands.send({ image: videoElement });
