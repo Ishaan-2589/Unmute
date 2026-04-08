@@ -167,106 +167,119 @@
 
     <div class="view-container">
       <div class="canvas-wrapper">
-        <video id="input_video" playsinline></video>
-        <canvas id="output_canvas"></canvas>
-        <button id="flip_btn" onclick="toggleCamera()">🔄 Flip Camera</button>
-      </div>
+    <video id="input_video" autoplay playsinline muted style="display:none"></video>
+    <canvas id="output_canvas"></canvas>
+    <button id="flip_btn" style="z-index: 999; position: absolute; bottom: 15px; right: 15px;">🔄 Flip Camera</button>
+</div>
     </div>
 
     <div class="bottom-sheet">
       <div id="label">Loading AI...</div>
       <div class="hint-text">Try: ✋ Hello | ✌️ Peace | 👍 Like | ✊ Yes</div>
     </div>
+<script>
+    const videoElement = document.getElementById('input_video');
+const canvasElement = document.getElementById('output_canvas');
+const canvasCtx = canvasElement.getContext('2d');
+const labelElement = document.getElementById('label');
+const flipBtn = document.getElementById('flip_btn');
 
-    <script>
-      const videoElement = document.getElementById('input_video');
-    const canvasElement = document.getElementById('output_canvas');
-    const canvasCtx = canvasElement.getContext('2d');
-    const labelElement = document.getElementById('label');
-    
-    let currentFacingMode = 'user'; // Start with front camera
-    let camera = null;
+let currentFacingMode = 'user';
+let stream = null;
 
-    function onResults(results) {
-        if (canvasElement.width !== results.image.width) {
-            canvasElement.width = results.image.width;
-            canvasElement.height = results.image.height;
+// Initialize MediaPipe Hands
+const hands = new Hands({
+    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+});
+
+hands.setOptions({
+    maxNumHands: 1,
+    modelComplexity: 1,
+    minDetectionConfidence: 0.6,
+    minTrackingConfidence: 0.6
+});
+
+hands.onResults(onResults);
+
+function onResults(results) {
+    canvasElement.width = videoElement.videoWidth;
+    canvasElement.height = videoElement.videoHeight;
+
+    canvasCtx.save();
+    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+    canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+    if (results.multiHandLandmarks) {
+        for (const landmarks of results.multiHandLandmarks) {
+            drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: '#3b82f6', lineWidth: 4});
+            drawLandmarks(canvasCtx, landmarks, {color: '#ffffff', lineWidth: 1, radius: 2});
+
+            const indexOpen = landmarks[8].y < landmarks[6].y;
+            const middleOpen = landmarks[12].y < landmarks[10].y;
+            const thumbOpen = landmarks[4].x < landmarks[3].x;
+            const ringOpen = landmarks[16].y < landmarks[14].y;
+            const pinkyOpen = landmarks[20].y < landmarks[18].y;
+
+            let gesture = "Detecting...";
+            if (indexOpen && middleOpen && ringOpen && pinkyOpen && thumbOpen) gesture = "✋ HELLO";
+            else if (indexOpen && middleOpen && !ringOpen && !pinkyOpen) gesture = "✌️ PEACE";
+            else if (thumbOpen && !indexOpen && !middleOpen && !ringOpen && !pinkyOpen) gesture = "👍 LIKE";
+            else if (!indexOpen && !middleOpen && !ringOpen && !pinkyOpen) gesture = "✊ YES";
+
+            labelElement.innerText = gesture;
         }
+    } else {
+        labelElement.innerText = "Show Hand";
+    }
+    canvasCtx.restore();
+}
 
-        canvasCtx.save();
-        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-        canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
-
-        if (results.multiHandLandmarks) {
-            for (const landmarks of results.multiHandLandmarks) {
-                drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: '#3b82f6', lineWidth: 4});
-                drawLandmarks(canvasCtx, landmarks, {color: '#ffffff', lineWidth: 1, radius: 2});
-
-                // Logic remains the same
-                const thumbOpen = landmarks[4].x < landmarks[3].x;
-                const indexOpen = landmarks[8].y < landmarks[6].y;
-                const middleOpen = landmarks[12].y < landmarks[10].y;
-                const ringOpen = landmarks[16].y < landmarks[14].y;
-                const pinkyOpen = landmarks[20].y < landmarks[18].y;
-
-                let gesture = "Detecting...";
-                if (indexOpen && middleOpen && ringOpen && pinkyOpen && thumbOpen) gesture = "✋ HELLO";
-                else if (indexOpen && middleOpen && !ringOpen && !pinkyOpen) gesture = "✌️ PEACE";
-                else if (thumbOpen && indexOpen && pinkyOpen && !middleOpen && !ringOpen) gesture = "🤟 I LOVE YOU";
-                else if (thumbOpen && !indexOpen && !middleOpen && !ringOpen && !pinkyOpen) gesture = "👍 LIKE";
-                else if (!indexOpen && !middleOpen && !ringOpen && !pinkyOpen) gesture = "✊ YES";
-                
-                labelElement.innerText = gesture;
-            }
-        } else {
-            labelElement.innerText = "Show Hand";
-        }
-        canvasCtx.restore();
+// THE FIX: Use native browser camera controls
+async function startCamera() {
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
     }
 
-    const hands = new Hands({
-        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
-    });
+    const constraints = {
+        video: { facingMode: currentFacingMode }
+    };
 
-    hands.setOptions({
-        maxNumHands: 1,
-        modelComplexity: 1,
-        minDetectionConfidence: 0.6,
-        minTrackingConfidence: 0.6
-    });
-
-    hands.onResults(onResults);
-
-    // Function to start/restart camera with specific facing mode
-    async function startCamera() {
-        if (camera) { await camera.stop(); }
+    try {
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+        videoElement.srcObject = stream;
         
-        // Mirror the canvas ONLY if using the front camera
+        // Mirror check
         if (currentFacingMode === 'user') {
-            canvasElement.classList.add('mirror');
+            canvasElement.style.transform = "scaleX(-1)";
         } else {
-            canvasElement.classList.remove('mirror');
+            canvasElement.style.transform = "scaleX(1)";
         }
 
-        camera = new Camera(videoElement, {
-            onFrame: async () => {
-                await hands.send({image: videoElement});
-            },
-            facingMode: currentFacingMode,
-            width: 640,
-            height: 480
-        });
-        camera.start();
+        videoElement.onloadedmetadata = () => {
+            videoElement.play();
+            requestAnimationFrame(sendToMediaPipe);
+        };
+    } catch (err) {
+        console.error("Error accessing camera: ", err);
+        alert("Camera access denied or not available");
     }
+}
 
-    function toggleCamera() {
-        currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
-        labelElement.innerText = "Switching Camera...";
-        startCamera();
+async function sendToMediaPipe() {
+    if (!videoElement.paused && !videoElement.ended) {
+        await hands.send({ image: videoElement });
+        requestAnimationFrame(sendToMediaPipe);
     }
+}
 
-    // Initial Start
+flipBtn.addEventListener('click', () => {
+    currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+    labelElement.innerText = "Switching...";
     startCamera();
-    </script>
+});
+
+// Initial call
+startCamera();
+</script>
   </body>
 </html>
