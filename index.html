@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Unmute | Mobile</title>
+    <link rel="icon" type="image/x-icon" href="logo.png">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
+
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #0f172a;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            text-align: center;
+            padding: 15px;
+            background: #1e293b;
+            border-bottom: 2px solid #3b82f6;
+        }
+
+        h1 { margin: 0; font-size: 1.5rem; letter-spacing: 1px; }
+        p { margin: 5px 0 0; font-size: 0.8rem; color: #94a3b8; }
+
+        .view-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            width: 100%;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 640px; /* Limits size on desktop */
+            aspect-ratio: 4 / 3; /* Keeps proportions consistent */
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+
+        #input_video { display: none; }
+        #output_canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        .bottom-sheet {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 20px 20px 0 0;
+            text-align: center;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.3);
+        }
+
+        #label {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #10b981;
+            margin-bottom: 5px;
+        }
+
+        .hint-text { color: #64748b; font-size: 0.85rem; font-weight: 500; }
+
+        .logo-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px; /* Space between logo and text */
+}
+
+.logo-img {
+    width: 50px; /* Adjust size as needed */
+    height: 50px;
+    border-radius: 50%; /* Makes it circular */
+    border: 2px solid #3b82f6; /* Matching blue border */
+    object-fit: cover;
+}
+
+        /* Responsive adjustments for desktop */
+        @media (min-width: 768px) {
+            .view-container { padding: 40px; }
+            .bottom-sheet { border-radius: 12px; margin: 20px; width: 640px; align-self: center; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo-container">
+        <img src="logo.png" alt="Unmute Logo" class="logo-img">
+        <div>
+            <h1>UNMUTE AI</h1>
+            <p>Empowering Silence through Computer Vision</p>
+        </div>
+    </div>
+</header>
+
+<div class="view-container">
+    <div class="canvas-wrapper">
+        <video id="input_video" playsinline></video>
+        <canvas id="output_canvas"></canvas>
+    </div>
+</div>
+
+<div class="bottom-sheet">
+    <div id="label">Loading AI...</div>
+    <div class="hint-text">Try: ✋ Hello | ✌️ Peace | 👍 Like | ✊ Yes</div>
+</div>
+
+<script>
+    const videoElement = document.getElementById('input_video');
+    const canvasElement = document.getElementById('output_canvas');
+    const canvasCtx = canvasElement.getContext('2d');
+    const labelElement = document.getElementById('label');
+
+    function onResults(results) {
+        // Dynamic canvas sizing
+        if (canvasElement.width !== results.image.width) {
+            canvasElement.width = results.image.width;
+            canvasElement.height = results.image.height;
+        }
+
+        canvasCtx.save();
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+        if (results.multiHandLandmarks) {
+            for (const landmarks of results.multiHandLandmarks) {
+                drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: '#3b82f6', lineWidth: 4});
+                drawLandmarks(canvasCtx, landmarks, {color: '#ffffff', lineWidth: 1, radius: 2});
+
+                const thumbOpen = landmarks[4].x < landmarks[3].x;
+                const indexOpen = landmarks[8].y < landmarks[6].y;
+                const middleOpen = landmarks[12].y < landmarks[10].y;
+                const ringOpen = landmarks[16].y < landmarks[14].y;
+                const pinkyOpen = landmarks[20].y < landmarks[18].y;
+
+                let gesture = "Detecting...";
+
+                if (indexOpen && middleOpen && ringOpen && pinkyOpen && thumbOpen) gesture = "✋ HELLO";
+                else if (indexOpen && middleOpen && !ringOpen && !pinkyOpen) gesture = "✌️ PEACE";
+                else if (thumbOpen && indexOpen && pinkyOpen && !middleOpen && !ringOpen) gesture = "🤟 I LOVE YOU";
+                else if (thumbOpen && !indexOpen && !middleOpen && !ringOpen && !pinkyOpen) gesture = "👍 LIKE";
+                else if (!indexOpen && !middleOpen && !ringOpen && !pinkyOpen) gesture = "✊ YES / READY";
+                else if (indexOpen && !middleOpen && !ringOpen && !pinkyOpen) gesture = "☝️ POINTING";
+
+                labelElement.innerText = gesture;
+            }
+        } else {
+            labelElement.innerText = "Show Hand";
+        }
+        canvasCtx.restore();
+    }
+
+    const hands = new Hands({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+    });
+
+    hands.setOptions({
+        maxNumHands: 1,
+        modelComplexity: 1,
+        minDetectionConfidence: 0.6,
+        minTrackingConfidence: 0.6
+    });
+
+    hands.onResults(onResults);
+
+    // Optimized camera for mobile
+    const camera = new Camera(videoElement, {
+        onFrame: async () => {
+            await hands.send({image: videoElement});
+        },
+        width: 640,
+        height: 480
+    });
+    camera.start();
+</script>
+
+</body>
+</html>
