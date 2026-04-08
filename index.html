@@ -210,52 +210,25 @@ function onResults(results) {
     canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
 
     if (results.multiHandLandmarks) {
-            for (const landmarks of results.multiHandLandmarks) {
-                // Draw the UI
-                drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: '#3b82f6', lineWidth: 4});
-                drawLandmarks(canvasCtx, landmarks, {color: '#ffffff', lineWidth: 1, radius: 2});
+        for (const landmarks of results.multiHandLandmarks) {
+            drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: '#3b82f6', lineWidth: 4});
+            drawLandmarks(canvasCtx, landmarks, {color: '#ffffff', lineWidth: 1, radius: 2});
 
-                // 1. Identify Finger States (Tip vs PIP Joint)
-                const isIndexUp = landmarks[8].y < landmarks[6].y;
-                const isMiddleUp = landmarks[12].y < landmarks[10].y;
-                const isRingUp = landmarks[16].y < landmarks[14].y;
-                const isPinkyUp = landmarks[20].y < landmarks[18].y;
-                
-                // Thumb logic: Is the thumb tip (4) significantly far from the index knuckle (5)?
-                const isThumbOpen = Math.abs(landmarks[4].x - landmarks[5].x) > 0.1;
+            const indexOpen = landmarks[8].y < landmarks[6].y;
+            const middleOpen = landmarks[12].y < landmarks[10].y;
+            const thumbOpen = landmarks[4].x < landmarks[3].x;
+            const ringOpen = landmarks[16].y < landmarks[14].y;
+            const pinkyOpen = landmarks[20].y < landmarks[18].y;
 
-                let gesture = "Scanning...";
-
-                // --- THE FULL DICTIONARY ---
-
-                // GESTURE: Hello / Stop (All 5 UP)
-                if (isIndexUp && isMiddleUp && isRingUp && isPinkyUp && isThumbOpen) {
-                    gesture = "✋ HELLO / STOP";
-                } 
-                // GESTURE: I Love You (Thumb, Index, Pinky UP)
-                else if (isThumbOpen && isIndexUp && isPinkyUp && !isMiddleUp && !isRingUp) {
-                    gesture = "🤟 I LOVE YOU";
-                }
-                // GESTURE: Peace / Victory (Index and Middle UP)
-                else if (isIndexUp && isMiddleUp && !isRingUp && !isPinkyUp) {
-                    gesture = "✌️ PEACE / VICTORY";
-                }
-                // GESTURE: Pointing (Only Index UP)
-                else if (isIndexUp && !isMiddleUp && !isRingUp && !isPinkyUp && !isThumbOpen) {
-                    gesture = "☝️ POINTING / ATTENTION";
-                }
-                // GESTURE: Like (Only Thumb UP/Open)
-                else if (isThumbOpen && !isIndexUp && !isMiddleUp && !isRingUp && !isPinkyUp) {
-                    gesture = "👍 LIKE / GOOD";
-                }
-                // GESTURE: Yes / Done (All fingers curled)
-                else if (!isIndexUp && !isMiddleUp && !isRingUp && !isPinkyUp && !isThumbOpen) {
-                    gesture = "✊ YES / DONE";
-                }
-
-                labelElement.innerText = gesture;
-            }
-        }else {
+            let gesture = "Detecting...";
+            if (indexOpen && middleOpen && ringOpen && pinkyOpen && thumbOpen) gesture = "✋ HELLO";
+            else if (indexOpen && middleOpen && !ringOpen && !pinkyOpen) gesture = "✌️ PEACE";
+            else if (thumbOpen && !indexOpen && !middleOpen && !ringOpen && !pinkyOpen) gesture = "👍 LIKE";
+            else if (!indexOpen && !middleOpen && !ringOpen && !pinkyOpen) gesture = "✊ YES";
+            
+            labelElement.innerText = gesture;
+        }
+    } else {
         labelElement.innerText = "Show Hand";
     }
     canvasCtx.restore();
