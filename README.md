@@ -2,117 +2,106 @@
 
 > **Bridging the Silence:** A Real-Time, Edge-AI Sign Language Translation Engine for Inclusive Communication.
 
-![Unmute AI Banner](https://img.shields.io/badge/Status-Active%20R%26D-0ea5e9?style=for-the-badge)
-![License](https://img.shields.io/badge/License-MIT-10b981?style=for-the-badge)
-![Tech Stack](https://img.shields.io/badge/Stack-Python%20%7C%20React%20%7C%20MediaPipe-38bdf8?style=for-the-badge)
-
 ---
 
 ## 📌 Overview
 
-**Unmute AI** is a zero-cost, web-native accessibility tool engineered to translate Indian Sign Language (ISL) gestures into real-time text. By leveraging **Client-Side Edge Computing**, Unmute AI processes video feeds directly inside the user's browser, eliminating hardware expenses, server costs, and cloud latency while providing data privacy.
+**Unmute AI** is a free, web-native accessibility tool engineered to translate Indian Sign Language (ISL) gestures into real-time text. By leveraging **Client-Side Edge Computing**, Unmute AI processes video feeds directly inside the user's browser via Google's MediaPipe engine, eliminating expensive hardware requirements, cloud subscription costs, and video stream latency while ensuring absolute user privacy.
 
-The project employs a **Hybrid R&D-to-Production Pipeline**:
-- **Python Research Laboratory:** Used for gesture data collection, heuristic math modeling, and 3D coordinate analysis.
-- **React/Vite Web Platform:** High-performance, zero-install production environment running MediaPipe JS for instant accessibility on standard webcams.
+The platform is designed to operate as a lightweight, zero-install single-page application (SPA) running entirely through standard web browser capabilities.
 
 ---
 
-## ✨ Key Features & Technical Highlights
+## ✨ Key Features & Highlights
 
-- **⚡ Client-Side Edge AI:** Runs inference locally on the device with zero cloud API overhead and absolute user privacy.
-- **🎯 21-Point Skeletal Tracking:** Maps 3D coordinate landmarks for high precision regardless of background noise.
-- **🔄 Chirality-Aware Logic:** Custom heuristic algorithms handle hand symmetry (Right vs. Left hand detection) to reduce false positives.
-- **🌐 No-Install Architecture:** Operates on standard browser hardware without requiring dedicated gloves or external depth sensors.
-- **Modular Monorepo Structure:** Clear separation between Python data collection scripts and the React web application interface.
+* **⚡ Client-Side Edge AI:** Runs gesture inference locally on the client device with zero cloud API overhead and maximum data privacy.
+* **🎯 21-Point Skeletal Tracking:** Maps 3D coordinate landmarks (`x`, `y`, `z`) for high-precision hand structure tracking regardless of complex backgrounds.
+* **🔄 Hand Chirality Normalization:** Algorithmic adjustment for left-hand and right-hand symmetry to ensure consistent detection across both hands.
+* **🌐 Zero-Install Architecture:** Operates instantly on any camera-enabled browser without requiring dedicated gloves, sensor arrays, or software downloads.
+* **🚀 Lightweight Footprint:** Single-file architecture for minimal loading times and maximum compatibility on low-end hardware.
 
 ---
 
-## 🛠️ Architecture & Monorepo Structure
+## 🛠️ Tech Stack & Dependencies
+
+* **Frontend Structure:** HTML5, Vanilla JavaScript (ES6+), CSS3
+* **AI & Computer Vision Engine:** 
+  * `@mediapipe/hands` (v0.4+)
+  * `@mediapipe/camera_utils` (v0.4+)
+* **Hosting & Execution:** Serverless Browser Runtime (Local File / Static Web Server)
+
+---
+
+## 📂 Repository Structure
 
 ```text
-UNMUTE-AI/
-├── lab/                     # R&D Laboratory (Python Environment)
-│   ├── data/                # Collected landmark JSON datasets
-│   ├── scripts/             # Auxiliary data processing scripts
-│   ├── lab.py               # Real-time gesture analysis & collector
-│   └── requirements.txt     # Python dependencies (OpenCV, MediaPipe)
-│
-├── unmute-app/              # Production Web App (React + Vite)
-│   ├── src/
-│   │   ├── hooks/           # Custom React hooks (useMediaPipe.js)
-│   │   ├── App.jsx          # Main dashboard view
-│   │   └── App.css          # Styling & components
-│   ├── index.html
-│   └── package.json
-└── README.md
+Unmute/
+├── index.html       # Single-file core engine (UI layout, WebCam pipeline, MediaPipe logic)
+├── README.md        # Comprehensive project documentation
+└── LICENSE          # Open-source license (MIT)
 ```
 
 ---
 
-## 🚀 Current Implementation Status (v1.0 Alpha)
+## 🚀 Getting Started & Local Setup
 
-The current version establishes the foundational infrastructure for low-latency gesture detection:
+Since **Unmute AI** is built using a pure, web-native single-file architecture, there are zero `npm install` requirements or complex build steps.
 
-- [x] **21-Landmark Hand Mapping:** Real-time tracking integrated into both Python R&D and React production interfaces.
-- [x] **Data Harvesting Pipeline:** Custom gesture saving tool (`lab.py`) that exports coordinate vectors into structured JSON datasets.
-- [x] **Chirality Normalization:** Algorithmic adjustment for left- and right-handed gesture inputs.
-- [x] **Core Gesture Set:** Active classification support for foundational static signs (e.g., *Hello*, *Like*, *Peace*, *I Love You*).
+### Prerequisites
 
----
+* A modern web browser (Google Chrome, Microsoft Edge, Brave, or Firefox recommended).
+* A working webcam (built-in, external USB, or smartphone camera connected via Iriun/DroidCam).
 
-## 🗺️ Roadmap & Future Implementations
+### Running the Application
 
-The project roadmap scales Unmute AI from a static gesture translator to a comprehensive communication suite:
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/Ishaan-2589/Unmute.git
+   cd Unmute
+   ```
 
-### Phase 1: Dynamic Gesture Recognition (Q3 2026)
-- Integration of sequence tracking (LSTM / Time-Series models) to process fluid, moving ISL signs over time rather than static frames.
+2. **Launch the platform:**
+   * **Option A (Direct):** Double-click `index.html` to open it directly in your web browser.
+   * **Option B (Recommended):** Serve via VS Code **Live Server** extension or Python static server:
+     ```bash
+     python -m http.server 8000
+     ```
+     Then open `http://localhost:8000` in your browser.
 
-### Phase 2: Natural Language Processing (NLP) Layer (Q4 2026)
-- Contextual sentence builder to transform raw gesture strings into grammatically correct natural language sentences.
-
-### Phase 3: Seamless Workspace Extensions (Q1 2027)
-- **Chrome Extension Overlay:** Direct integration for real-time translation overlays on Google Meet, Zoom, and Microsoft Teams calls.
-- **PWA Deployment:** Offline-first Progressive Web App capabilities for low-bandwidth environments in remote regions.
-
----
-
-## 💻 Getting Started
-
-### 1. Python Laboratory Setup (R&D)
-
-```bash
-# Navigate to lab directory
-cd lab
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Launch the gesture recording environment
-python lab.py
-```
-*Press `S` to save current landmark coordinates to dataset; press `Q` to quit.*
-
-### 2. React Production Setup (Web Dashboard)
-
-```bash
-# Navigate to web app directory
-cd unmute-app
-
-# Install packages
-npm install
-
-# Start local server
-npm run dev
-```
+3. **Grant Camera Permissions:** When prompted by the browser, allow access to your camera feed.
 
 ---
 
-## 👥 Authors & Acknowledgments
+## 🚦 Current Capabilities (v1.0 Ready)
 
-- **Ishaan** — *Lead Developer & AI Integration*
-- Developed as part of Academic Research at **JIMS Vasant Kunj**.
-- Recognition: Showcased at **CYNET 2026**.
+* [x] **21-Landmark Coordinate Streaming:** Real-time canvas overlay rendering hand connections over raw video input.
+* [x] **Static Heuristic Classification:** Instant detection for primary gestures (*Like 👍*, *Peace ✌️*, *Hello ✋*, *I Love You 🤟*).
+* [x] **Mirrored Video Canvas:** Natural user feed orientation to simulate a real-time mirror display.
+* [x] **Privacy Safeguards:** No raw image or video frames leave the browser memory environment.
 
 ---
 
+## 🗺️ Future Implementations & Scalability Roadmap
+
+* **Phase 1: Custom ML Classifier (Q3 2026)**
+  * Transition from static geometric heuristics to a trained `scikit-learn` / `tfjs` neural network running on multi-point landmark datasets.
+* **Phase 2: Dynamic Motion Tracking (Q4 2026)**
+  * Temporal gesture sequence recognition using frame-buffer queues (LSTM/RNN logic) for dynamic ISL movement translation.
+* **Phase 3: Contextual Sentence Builder (Q1 2027)**
+  * Integration of lightweight Natural Language Processing (NLP) to convert raw translated sign keywords into structured, grammatically correct sentences.
+* **Phase 4: Workspace Extensions (Q2 2027)**
+  * Chrome Extension overlay targeting platforms like Google Meet and Zoom for real-time video call accessibility captions.
+
+---
+
+## 👤 Author & Academic Context
+
+* **Ishaan** — *Lead Developer & AI Integration*
+* Developed as part of Academic Minor & Major Project requirements at **JIMS Vasant Kunj**.
+* Recognized and showcased at **CYNET 2026**.
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License** — feel free to modify and expand upon this codebase for open-source accessibility efforts.
